@@ -7,7 +7,8 @@ from .customer_requests import (get_all_customers,
                             get_single_customer,
                             create_customer,
                             delete_customer,
-                            update_customer)
+                            update_customer,
+                            get_customers_by_email)
 from .employee_requests import (get_all_employees,
                             get_single_employee,
                             create_employee,

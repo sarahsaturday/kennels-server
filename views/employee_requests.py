@@ -1,3 +1,6 @@
+import sqlite3
+from models import Employee
+
 EMPLOYEES = [
     {
         "id": 1,
@@ -7,10 +10,47 @@ EMPLOYEES = [
 
 def get_all_employees():
     """
-    Get all employees.
+    Get all employees
 
     """
-    return EMPLOYEES
+    # Open a connection to the database
+    with sqlite3.connect("./kennel.sqlite3") as conn:
+
+        # Just use these. It's a Black Box.
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        # Write the SQL query to get the information you want
+        db_cursor.execute("""
+        SELECT
+            e.id,
+            e.name,
+            l.name location_name,
+            l.address location_address
+        FROM Employee e
+        JOIN Location l ON l.id = e.location_id
+        """)
+
+        employees = []
+        dataset = db_cursor.fetchall()
+
+    for row in dataset:
+        # Create a Location instance from the current row
+        location = {
+            'name': row['location_name'],
+            'address': row['location_address']
+            }
+
+        # Create an Employee instance from the current row
+        employee = Employee(
+            row['id'],
+            row['name'],
+            location  # Pass the location dictionary to the Employee's 'location' property
+            )
+
+        employees.append(employee.__dict__)
+
+    return employees
 
 def get_single_employee(id):
     """
@@ -72,12 +112,25 @@ def delete_employee(id):
 def update_employee(id, new_employee):
     """
     update employee
-
     """
-    # Iterate the EMPLOYEES list, but use enumerate() so that
-    # you can access the index value of each item.
-    for index, employee in enumerate(EMPLOYEES):
-        if employee["id"] == id:
-            # Found the employee. Update the value.
-            EMPLOYEES[index] = new_employee
-            break
+    with sqlite3.connect("./kennel.sqlite3") as conn:
+        db_cursor = conn.cursor()
+
+        db_cursor.execute("""
+        UPDATE Employee
+            SET
+                name = ?,
+        WHERE id = ?
+        """, (new_employee['name'], id, ))
+
+        # Were any rows affected?
+        # Did the client send an `id` that exists?
+        rows_affected = db_cursor.rowcount
+
+    if rows_affected == 0:
+        # Forces 404 response by main module
+        return False
+    else:
+        # Forces 204 response by main module
+        return True
+    
